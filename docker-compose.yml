@@ -9,6 +9,10 @@ services:
       - "127.0.0.1:8120:80"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      # Checked every second while starting: ci-agent's deploy gate waits 30s for "healthy", and with
+      # only `interval` the first check would not run until 30s had passed.
+      start_period: 30s
+      start_interval: 1s
       interval: 30s
       timeout: 5s
       retries: 3
