@@ -32,3 +32,7 @@ PROXY_SECRET=test docker compose up -d --build
 curl -s localhost:8120/test/api/v1/models | head -c 200
 curl -s -o /dev/null -w '%{http_code}\n' localhost:8120/api/v1/models   # 404
 ```
+
+## License
+
+[MIT](LICENSE)
