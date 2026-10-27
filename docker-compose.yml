@@ -1,12 +1,13 @@
 services:
-  proxy:
+  relay:
     build: .
     restart: unless-stopped
     environment:
       # Set in the ci-agent project's environment, never committed.
       PROXY_SECRET: ${PROXY_SECRET:?PROXY_SECRET must be set}
     ports:
-      - "127.0.0.1:8120:80"
+      # The project's HTTP port, where the host's nginx sends its domains.
+      - "127.0.0.1:${HTTP_PORT:-8120}:80"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
       # Checked every second while starting: ci-agent's deploy gate waits 30s for "healthy", and with

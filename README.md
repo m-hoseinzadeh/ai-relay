@@ -1,7 +1,7 @@
-# openrouter-proxy
+# ai-relay
 
-A pass-through proxy to `https://openrouter.ai`, and a relay to a few AI APIs, for servers they refuse
-by region (OpenRouter answers 403 to every request from Iran). It runs on a host they accept and
+A pass-through relay to AI APIs (OpenRouter, OpenAI, Anthropic, Google's Gemini API) for servers they
+refuse by region (OpenRouter answers 403 to every request from Iran). It runs on a host they accept and
 forwards the request with the caller's IP headers removed.
 
 ```
@@ -24,8 +24,11 @@ another host, add it to the relay `location` in `templates/default.conf.template
 
 ## Deploy (ci-agent)
 
-Compose mode, this repo, HTTP port `8120`, environment `PROXY_SECRET=<random>`. Pre-pull the base
-image on the host, since ci-agent does not pull: `docker pull nginx:1.29-alpine`.
+Compose mode, this repo, HTTP port `8120` (or another, given to the project as `HTTP_PORT` too),
+environment `PROXY_SECRET=<random>`. Pre-pull the base image on the host, since ci-agent does not
+pull: `docker pull nginx:1.29-alpine`.
+
+It was called openrouter-proxy until 2026-10-27, when it became a relay for more than OpenRouter.
 
 ## Use
 
