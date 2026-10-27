@@ -1,6 +1,9 @@
-# Forwards https://<this host>/<PROXY_SECRET>/... to https://openrouter.ai/... and nothing else.
+# Forwards, and nothing else:
+#   https://<this host>/<PROXY_SECRET>/...                    -> https://openrouter.ai/...
+#   https://<this host>/<PROXY_SECRET>/relay/<host>/...       -> https://<host>/...
+# where <host> is one of the AI APIs listed below (OpenAI, Anthropic, Google's Gemini API).
 #
-# It holds no OpenRouter key: the caller sends its own Authorization header, which is passed through.
+# It holds no key: the caller sends its own (Authorization, x-api-key), which is passed through.
 # The secret path segment only keeps the proxy from being found and used as an open relay.
 
 log_format proxy '$time_iso8601 $status $request_method $request_time $upstream_status';
@@ -50,6 +53,44 @@ server {
         proxy_read_timeout 300s;
         proxy_send_timeout 300s;
         client_max_body_size 20m;
+    }
+
+    # The relay: the provider's host is the first path segment after /relay/. Only these hosts;
+    # any other gets a 404 (the prefix location below). A regex location wins over the OpenRouter
+    # prefix above, so /relay/ paths never reach OpenRouter.
+    location ~ ^/${PROXY_SECRET}/relay/(api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com)(/.*)$ {
+        set $relay_host $1;
+        set $relay_path $2;
+        proxy_pass https://$relay_host$relay_path$is_args$args;
+
+        proxy_ssl_server_name on;
+        proxy_ssl_name $relay_host;
+        proxy_ssl_verify on;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $relay_host;
+        proxy_set_header Connection "";
+
+        # As above: the provider must see this server, not the original client.
+        proxy_set_header X-Real-IP "";
+        proxy_set_header X-Forwarded-For "";
+        proxy_set_header X-Forwarded-Host "";
+        proxy_set_header X-Forwarded-Proto "";
+        proxy_set_header X-Forwarded-Prefix "";
+        proxy_set_header Forwarded "";
+        # The Siteoseo AI service's relay header: meant for this hop only.
+        proxy_set_header X-Relay-Key "";
+
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        client_max_body_size 20m;
+    }
+
+    location /${PROXY_SECRET}/relay/ {
+        return 404;
     }
 
     location / {
